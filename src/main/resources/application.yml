@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: rag-assistant
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ragdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-sonnet-4-5
+
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        options:
+          model: nomic-embed-text
+
+    vectorstore:
+      pgvector:
+        host: localhost
+        port: 5432
+        database: ragdb
+        username: postgres
+        password: postgres
+        index-type: HNSW
+        dimensions: 768  # nomic-embed-text genera vectores de 768 dimensiones
+        initialize-schema: true
