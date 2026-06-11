@@ -7,6 +7,12 @@ spring:
     password: postgres
     driver-class-name: org.postgresql.Driver
   ai:
+    chat:
+      client:
+        observations:
+          include-input: true
+    model:
+      chat: anthropic
     anthropic:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
