@@ -4,6 +4,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 @Service
 public class QuestionAnsweringService {
@@ -21,6 +22,13 @@ public class QuestionAnsweringService {
         return chatClient.prompt()
                 .user(question)
                 .call()
+                .content();
+    }
+
+    public Flux<String> askStreaming (String question){
+        return chatClient.prompt()
+                .user(question)
+                .stream()
                 .content();
     }
 }

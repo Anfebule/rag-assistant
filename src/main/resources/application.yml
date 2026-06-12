@@ -3,8 +3,8 @@ spring:
     name: rag-assistant
   datasource:
     url: jdbc:postgresql://localhost:5432/ragdb
-    username: postgres
-    password: postgres
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   ai:
     chat:
@@ -30,8 +30,14 @@ spring:
         host: localhost
         port: 5432
         database: ragdb
-        username: postgres
-        password: postgres
+        username: ${DB_USERNAME}
+        password: ${DB_PASSWORD}
         index-type: HNSW
-        dimensions: 768  # nomic-embed-text genera vectores de 768 dimensiones
+        dimensions: 768  # nomic-embed-text generate 768 dimension vectors
         initialize-schema: true
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
