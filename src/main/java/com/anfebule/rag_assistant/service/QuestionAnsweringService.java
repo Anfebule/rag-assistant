@@ -1,5 +1,6 @@
 package com.anfebule.rag_assistant.service;
 
+import com.anfebule.rag_assistant.advisor.ObservabilityAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -15,7 +16,7 @@ public class QuestionAnsweringService {
         QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore).build();
 
         this.chatClient = chatClientBuilder
-                .defaultAdvisors(advisor)
+                .defaultAdvisors(advisor, new ObservabilityAdvisor())
                 .defaultTools(documentToolsService)
                 .build();
     }
