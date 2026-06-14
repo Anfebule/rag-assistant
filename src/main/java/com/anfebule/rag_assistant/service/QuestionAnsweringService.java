@@ -8,13 +8,15 @@ import reactor.core.publisher.Flux;
 
 @Service
 public class QuestionAnsweringService {
+
     private final ChatClient chatClient;
 
-    public QuestionAnsweringService(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
+    public QuestionAnsweringService(ChatClient.Builder chatClientBuilder, VectorStore vectorStore, DocumentToolsService documentToolsService) {
         QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore).build();
 
         this.chatClient = chatClientBuilder
                 .defaultAdvisors(advisor)
+                .defaultTools(documentToolsService)
                 .build();
     }
 
