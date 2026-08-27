@@ -47,8 +47,8 @@ Java 21, Spring Boot 3.5, Spring AI 1.1.7, Apache Kafka (in progress), PostgreSQ
 
 You'll need Java 21, Docker, and an `ANTHROPIC_API_KEY`.
 
-1. Start Postgres (with pgvector) and Ollama. Both run as plain Docker containers for now, a one-command docker-compose is coming.
-2. Pull the embedding model: `ollama pull nomic-embed-text`.
+1. Start Postgres (with pgvector), Ollama, and Kafka: `docker compose up -d`. First run also creates the `documents` Kafka topic.
+2. Pull the embedding model: `ollama pull nomic-embed-text` (run against the Ollama container).
 3. Set `ANTHROPIC_API_KEY` (and `DB_USERNAME` / `DB_PASSWORD` if you're not using the defaults in `application.yml`).
 4. Run it: `./mvnw spring-boot:run`.
 5. Add a document: `POST /documents` with `{ "title": "...", "content": "..." }`.
@@ -60,7 +60,7 @@ The services above are being built with Claude Code, using real subagents, skill
 
 ## What's Next
 
-- [ ] One docker-compose command for Postgres/pgvector, Ollama, and Kafka
+- [x] One docker-compose command for Postgres/pgvector, Ollama, and Kafka
 - [ ] Documents / Chunk / Embedding services, actually separate, actually talking over Kafka
 - [ ] Per-document status and duplicate-safe processing
 - [ ] Real fairness between customers, not just a customerID key (rate limiting, maybe partition-splitting for big customers)
