@@ -1,0 +1,96 @@
+# Local infra for rag-assistant: Postgres+pgvector, Ollama, and Kafka (KRaft mode, no Zookeeper).
+# The app itself isn't containerized yet, run it with ./mvnw spring-boot:run against these.
+#
+# Usage:
+#   docker compose up -d
+#   ollama pull nomic-embed-text   (first time only, run against the ollama container)
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rag-postgres
+    environment:
+      POSTGRES_DB: ragdb
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ragdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rag-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rag-network
+
+  kafka:
+    # Official Apache Kafka image, KRaft mode built in, no Zookeeper needed.
+    # Pin this to a specific current tag before relying on it for anything beyond local dev.
+    image: apache/kafka:latest
+    container_name: rag-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: "rag-assistant-kraft-cluster"
+    ports:
+      - "9092:9092"     # for services running on the host, e.g. ./mvnw spring-boot:run
+      - "29092:29092"   # for services running inside this compose network
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rag-network
+
+  # One-shot job: creates the documents topic once Kafka is healthy, then exits.
+  # Partition count and topic name are placeholders, update once the Documents Service schema is final.
+  kafka-init:
+    image: apache/kafka:latest
+    container_name: rag-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
+      --create --if-not-exists --topic documents --partitions 10 --replication-factor 1"
+    networks:
+      - rag-network
+    restart: "no"
+
+volumes:
+  postgres_data:
+  ollama_data:
+  kafka_data:
+
+networks:
+  rag-network:
+    driver: bridge
